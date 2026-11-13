@@ -1,0 +1,99 @@
+# ============================================================
+# SoulMate — what never goes to GitHub
+# ============================================================
+
+# ---------- secrets ----------
+# Real env files hold Supabase keys and the Google client secret.
+# Only the *.env.example templates are committed.
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+frontend/.env
+backend/.env
+
+# keep the templates (gitignore negation must follow the rules above)
+!**/.env.example
+
+# Supabase / Google credentials pasted anywhere else
+*.pem
+*.key
+*.p12
+*.keystore
+
+# ---------- dependencies ----------
+node_modules/
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/install-state.gz
+
+# ---------- build output ----------
+dist/
+dist-ssr/
+build/
+out/
+*.local
+.vite/
+frontend/dist/
+
+# ---------- logs ----------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ---------- test / coverage ----------
+coverage/
+*.lcov
+.nyc_output/
+
+# ---------- editors & OS ----------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# VS Code: commit the shared folder config, ignore local noise
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+
+.idea/
+*.iml
+
+# ---------- temp / scratch ----------
+# local QA scripts and screenshots I generate while checking the UI
+.qa-*.mjs
+.qa-*.png
+.ui-*.png
+.v-*.png
+.m-*.png
+.d-*.png
+.f-*.png
+.l-*.png
+.s-*.png
+.e-*.png
+*.tmp
+*.temp
+.cache/
+.temp/
+
+# ---------- misc ----------
+.vercel
+.netlify
+.turbo
+*.tsbuildinfo
