@@ -25,6 +25,11 @@ backend/.env
 
 # ---------- dependencies ----------
 node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
 .pnp
 .pnp.js
 .yarn/cache

@@ -143,39 +143,58 @@ Open **http://localhost:5199**.
 
 ---
 
-## Deploying (Render)
+## Deploying
 
-SoulMate has **no backend server** — auth, Postgres and Storage are all Supabase. Deploy only the
-frontend, as a **Static Site** (not a Web Service):
+Two services:
+
+```
+Browser ──► Netlify (static React build) ──► Render (FastAPI) ──► Supabase
+                    └──────────────────────────────────────────► Supabase Auth
+```
+
+### 1 · Backend → Render (Web Service, Python)
 
 | Setting | Value |
 |---|---|
-| Service type | **Static Site** (a Web Service will try Python/`requirements.txt` and fail) |
-| Root Directory | `frontend` |
-| Build Command | `npm ci && npm run build` |
-| Publish Directory | `dist` |
-| Rewrite | `/*` → `/index.html` (SPA fallback) |
-| Env vars | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_GOOGLE_CLIENT_ID` |
+| Service type | **Web Service** |
+| Runtime / Language | **Python 3** |
+| Root Directory | `backend` |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `gunicorn app.main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT` |
+| Health Check Path | `/health` |
 
-[`render.yaml`](render.yaml) contains the same config as a blueprint.
+Environment variables:
 
-### Netlify
+```dotenv
+SUPABASE_URL=https://<ref>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<service role key>
+CORS_ORIGINS=https://<your-app>.netlify.app,http://localhost:5199
+```
+
+`backend/render.yaml`, `backend/Procfile` and `backend/requirements.txt` carry the same config.
+API docs live at `https://<api>.onrender.com/docs`.
+
+### 2 · Frontend → Netlify (Static Site)
 
 [`netlify.toml`](netlify.toml) already sets base `frontend`, command `npm ci && npm run build`,
-publish `dist`, the SPA rewrite and asset/service-worker cache headers — leave Netlify's build
-settings on **“Use build settings from netlify.toml”** and only add the env vars:
+publish `dist`, the SPA rewrite and cache headers — keep Netlify's build settings on
+**“Use build settings from netlify.toml”** and only add the env vars:
 
 | Variable | Value |
 |---|---|
 | `VITE_SUPABASE_URL` | your project URL |
 | `VITE_SUPABASE_ANON_KEY` | public anon key |
 | `VITE_GOOGLE_CLIENT_ID` | Google OAuth client id |
+| `VITE_API_URL` | `https://<your-api>.onrender.com` (enables the backend) |
 
-### After the first deploy
+The app works without `VITE_API_URL` (it talks to Supabase directly); set it to route data
+through the FastAPI service.
+
+### 3 · After the first deploy
 
 Set **Supabase → Authentication → URL Configuration** to your live URL:
 
-- Site URL: `https://<your-app>.netlify.app` (or `.onrender.com`)
+- Site URL: `https://<your-app>.netlify.app`
 - Redirect URLs: `https://<your-app>.netlify.app/auth/callback`
 
 Also add the same URL under **Google Cloud Console → Credentials → Authorized JavaScript origins**.

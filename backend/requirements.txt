@@ -1,0 +1,12 @@
+# SoulMate backend — FastAPI REST API in front of Supabase
+# Lower bounds only: Render runs Python 3.12 (see runtime.txt), local dev may
+# have something newer. Pinning exact versions breaks wherever a wheel is
+# missing, so we let pip resolve compatible releases.
+
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30,<1
+gunicorn>=22,<24
+pydantic>=2.7,<3
+pydantic-settings>=2.3,<3
+httpx>=0.27,<1
+python-dotenv>=1.0,<2

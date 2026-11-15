@@ -1,7 +1,7 @@
-# Netlify configuration — SoulMate
+# Netlify configuration — SoulMate frontend
 #
-# SoulMate has no backend server: auth, Postgres and storage are Supabase.
-# Only the Vite frontend is deployed.
+# Frontend only. The API lives on Render (see backend/render.yaml); the browser
+# talks to it through VITE_API_URL. Supabase handles auth, Postgres and storage.
 
 [build]
   # All install/build commands run from here
@@ -14,6 +14,7 @@
 
 # SPA fallback — every unknown path serves index.html so client-side routes
 # (/app, /app/journal, /auth/callback ...) survive a hard refresh.
+# The root rule is a catch-all, so it must stay last.
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
