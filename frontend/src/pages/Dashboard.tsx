@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { format } from 'date-fns'
+import { addDays, format } from 'date-fns'
 import {
   ArrowRight,
   CalendarClock,
@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Flame,
   FolderKanban,
+  Minus,
   Sparkles,
   Target,
   TrendingUp,
@@ -15,14 +16,40 @@ import {
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { computeStats, moodBadge } from '../lib/stats'
-import { markHabit, updateGoal, today as todayStr } from '../lib/api'
+import { createGoal, isPreviewMode, markHabit, updateGoal, today as todayStr } from '../lib/api'
 import { HORIZON_LABEL } from '../lib/types'
+import { createDueRecurringGoals } from '../lib/recurring'
 import { EmptyState, PageHeader, Progress } from '../components/ui'
+import { TemplateStarter } from '../components/TemplatePicker'
 
 export default function Dashboard() {
   const { user, data, refresh } = useApp()
   const [busy, setBusy] = useState<string | null>(null)
+  const [hideStarter, setHideStarter] = useState(false)
   const d = todayStr()
+
+  // A brand-new workspace: no journal, no goals, no habits yet.
+  const isFresh = !data.journal.length && !data.goals.length && !data.habits.length
+
+  // Roll recurring goals forward once per visit (creates today's copy).
+  useEffect(() => {
+    if (!user || isPreviewMode()) return
+    const hasRecurring = data.goals.some((g) => g.repeat && g.series_id)
+    if (!hasRecurring) return
+    let alive = true
+    createDueRecurringGoals(user.id, data.goals)
+      .then((n) => {
+        if (alive && n > 0) return refresh()
+      })
+      .catch(() => {
+        /* offline or RLS — the user can retry by reloading */
+      })
+    return () => {
+      alive = false
+    }
+    // only when the goal set actually changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, data.goals.length])
 
   const stats = useMemo(
     () =>
@@ -52,6 +79,26 @@ export default function Dashboard() {
         status,
         completed_at: status === 'success' ? new Date().toISOString() : null,
         progress: status === 'success' ? 100 : 0,
+      })
+      await refresh()
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  /** add one of the suggested goals to tomorrow without leaving the dashboard */
+  const quickAddTomorrow = async (title: string) => {
+    if (!user) return
+    setBusy(`add-${title}`)
+    try {
+      await createGoal(user.id, {
+        title,
+        horizon: 'tomorrow',
+        bucket: 'present',
+        status: 'planned',
+        priority: 'medium',
+        progress: 0,
+        due_date: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
       })
       await refresh()
     } finally {
@@ -103,6 +150,8 @@ export default function Dashboard() {
         }
       />
 
+      {(isFresh && !hideStarter) && <TemplateStarter onApplied={() => setHideStarter(true)} />}
+
       {/* KPI row */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi
@@ -137,9 +186,9 @@ export default function Dashboard() {
         />
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid items-start gap-6 lg:grid-cols-3">
         {/* today's goals */}
-        <section className="card p-5 lg:col-span-2">
+        <section className="card h-fit self-start p-5 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold text-slate-900">Today&apos;s goals</h2>
             <Link to="/app/goals" className="text-xs font-medium text-brand-600 hover:text-brand-700">
@@ -205,11 +254,26 @@ export default function Dashboard() {
               </Link>
             </div>
             {tomorrowGoalList.length === 0 ? (
-              <p className="text-xs text-slate-500">Plan tomorrow before you sleep — it makes mornings easy.</p>
+              <div className="rounded-lg border border-dashed border-slate-200 px-3 py-3 dark:border-slate-700">
+                <p className="text-xs text-slate-500">Plan tomorrow before you sleep — it makes mornings easy.</p>
+                {/* one-tap common picks, so the card is never a dead end */}
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {['Wake up early', 'Workout', 'Deep work block', 'Read 20 pages'].map((title) => (
+                    <button
+                      key={title}
+                      onClick={() => quickAddTomorrow(title)}
+                      disabled={busy === `add-${title}`}
+                      className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-600 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:border-brand-600 dark:hover:bg-brand-950/40"
+                    >
+                      + {title}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : (
               <ul className="space-y-1.5">
                 {tomorrowGoalList.slice(0, 4).map((g) => (
-                  <li key={g.id} className="flex items-center gap-2 text-sm text-slate-400">
+                  <li key={g.id} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                     <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400" />
                     <span className="truncate">{g.title}</span>
                   </li>
@@ -269,24 +333,28 @@ export default function Dashboard() {
                       <button
                         onClick={() => toggleHabit(h.id, 'yes')}
                         disabled={busy === `${h.id}-yes`}
-                        className={`flex h-7 w-7 items-center justify-center rounded-lg transition ${log?.mark === 'yes'
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-slate-100 text-slate-500 hover:bg-emerald-500/20 hover:text-emerald-600'
+                        aria-pressed={log?.mark === 'yes'}
+                        aria-label={`${h.name}: did it right`}
+                        className={`flex h-7 w-7 items-center justify-center rounded-lg transition disabled:opacity-50 ${log?.mark === 'yes'
+                            ? 'bg-emerald-500 text-white shadow-sm'
+                            : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:bg-slate-800 dark:text-slate-500 dark:hover:bg-emerald-950 dark:hover:text-emerald-400'
                           }`}
                         title="Done right"
                       >
-                        <Check size={14} />
+                        <Check size={14} strokeWidth={3} />
                       </button>
                       <button
                         onClick={() => toggleHabit(h.id, 'no')}
                         disabled={busy === `${h.id}-no`}
-                        className={`flex h-7 w-7 items-center justify-center rounded-lg transition ${log?.mark === 'no'
-                            ? 'bg-rose-500 text-white'
-                            : 'bg-slate-100 text-slate-500 hover:bg-rose-500/20 hover:text-rose-600'
+                        aria-pressed={log?.mark === 'no'}
+                        aria-label={`${h.name}: missed`}
+                        className={`flex h-7 w-7 items-center justify-center rounded-lg transition disabled:opacity-50 ${log?.mark === 'no'
+                            ? 'bg-rose-500 text-white shadow-sm'
+                            : 'bg-slate-100 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:bg-slate-800 dark:text-slate-500 dark:hover:bg-rose-950 dark:hover:text-rose-400'
                           }`}
                         title="Missed / wrong"
                       >
-                        <X size={14} />
+                        <Minus size={14} strokeWidth={3} />
                       </button>
                     </li>
                   )

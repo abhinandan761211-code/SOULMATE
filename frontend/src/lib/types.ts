@@ -47,9 +47,13 @@ export interface JournalEntry {
   title: string | null
   mood: Mood | null
   content: string | null
+  /** public URLs of photos attached to the entry (Supabase Storage) */
+  photos?: string[] | null
   created_at?: string
   updated_at?: string
 }
+
+export type GoalRepeat = 'daily' | 'weekdays' | 'weekly' | 'monthly'
 
 export interface Goal {
   id: string
@@ -64,6 +68,10 @@ export interface Goal {
   progress: number
   result_note: string | null
   completed_at: string | null
+  /** recurring goal: how often a fresh copy should be created */
+  repeat?: GoalRepeat | null
+  /** ties every generated copy of a recurring goal together */
+  series_id?: string | null
   created_at?: string
   updated_at?: string
 }

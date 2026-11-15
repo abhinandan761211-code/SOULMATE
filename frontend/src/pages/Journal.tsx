@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format, parseISO, subDays } from 'date-fns'
-import { BookOpen, Check, Plus, Save, Trash2, X } from 'lucide-react'
+import { BookOpen, Check, ImageIcon, Minus, Plus, Save, Trash2, X } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { createHabit, deleteHabit, deleteJournal, markHabit, saveJournal, today as todayStr } from '../lib/api'
 import { MOODS, type HabitMark, type Mood } from '../lib/types'
 import { moodBadge } from '../lib/stats'
+import { uploadJournalPhotos } from '../lib/storage'
 import { EmptyState, PageHeader } from '../components/ui'
+import { PhotoPicker } from '../components/QuickCapture'
 
 export default function Journal() {
   const { user, data, refresh } = useApp()
@@ -16,6 +18,9 @@ export default function Journal() {
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState<string | null>(null)
   const [newHabit, setNewHabit] = useState('')
+  // photos already stored on the entry + newly picked files for this save
+  const [photos, setPhotos] = useState<string[]>([])
+  const [newFiles, setNewFiles] = useState<File[]>([])
 
   const existing = useMemo(() => data.journal.find((j) => j.entry_date === date), [data.journal, date])
 
@@ -23,6 +28,8 @@ export default function Journal() {
     setTitle(existing?.title ?? '')
     setMood((existing?.mood as Mood | null) ?? null)
     setContent(existing?.content ?? '')
+    setPhotos(existing?.photos ?? [])
+    setNewFiles([])
     setSavedAt(null)
   }, [existing, date])
 
@@ -30,7 +37,11 @@ export default function Journal() {
     if (!user) return
     setSaving(true)
     try {
-      await saveJournal(user.id, { entry_date: date, title, mood, content })
+      const uploaded = newFiles.length ? await uploadJournalPhotos(user.id, newFiles) : []
+      const all = [...photos, ...uploaded]
+      await saveJournal(user.id, { entry_date: date, title, mood, content, photos: all })
+      setPhotos(all)
+      setNewFiles([])
       await refresh()
       setSavedAt(format(new Date(), 'HH:mm'))
     } finally {
@@ -88,7 +99,7 @@ export default function Journal() {
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <section className="card p-5 lg:col-span-2">
+        <section className="card flex flex-col p-5 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm font-medium text-slate-700">
               {format(parseISO(date), 'EEEE, d MMMM yyyy')}
@@ -128,11 +139,41 @@ export default function Journal() {
 
           <label className="label">What happened today?</label>
           <textarea
-            className="input min-h-[260px] resize-y leading-relaxed"
+            className="input min-h-[260px] flex-1 resize-y leading-relaxed"
             placeholder="What did you do? What went well? What went wrong? What will you do differently tomorrow?"
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
+
+          {/* photos: stored URLs + files picked for the next save */}
+          <div className="mt-3 space-y-2">
+            <span className="label mb-0 flex items-center gap-1.5">
+              <ImageIcon size={12} /> Photos
+            </span>
+            {(photos.length > 0 || newFiles.length > 0) && (
+              <div className="flex flex-wrap gap-2">
+                {photos.map((url) => (
+                  <span key={url} className="group relative h-16 w-16 overflow-hidden rounded-lg ring-1 ring-slate-200 dark:ring-slate-700">
+                    <img src={url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    <button
+                      onClick={() => setPhotos(photos.filter((p) => p !== url))}
+                      className="absolute inset-0 hidden items-center justify-center bg-slate-900/60 text-white group-hover:flex"
+                      aria-label="Remove photo"
+                      type="button"
+                    >
+                      <X size={14} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <PhotoPicker files={newFiles} setFiles={setNewFiles} />
+            {newFiles.length > 0 && (
+              <p className="text-[11px] text-slate-500">
+                {newFiles.length} photo{newFiles.length > 1 ? 's' : ''} will upload when you press Save.
+              </p>
+            )}
+          </div>
 
           <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
             <span>{content.trim() ? `${content.trim().split(/\s+/).length} words` : 'Start writing…'}</span>
@@ -172,20 +213,27 @@ export default function Journal() {
                       <button
                         onClick={() => setMark(h.id, 'yes')}
                         aria-pressed={log?.mark === 'yes'}
-                        className={`flex h-7 w-7 items-center justify-center rounded-lg transition ${log?.mark === 'yes' ? 'bg-emerald-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'
+                        aria-label={`${h.name}: did it right`}
+                        className={`flex h-7 w-7 items-center justify-center rounded-lg transition ${log?.mark === 'yes'
+                            ? 'bg-emerald-500 text-white shadow-sm'
+                            : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:bg-slate-800 dark:text-slate-500 dark:hover:bg-emerald-950 dark:hover:text-emerald-400'
                           }`}
                         title="Right / done"
                       >
-                        <Check size={14} />
+                        <Check size={14} strokeWidth={3} />
                       </button>
+                      {/* a cross, not a bin — this marks the habit wrong, it does not delete it */}
                       <button
                         onClick={() => setMark(h.id, 'no')}
                         aria-pressed={log?.mark === 'no'}
-                        className={`flex h-7 w-7 items-center justify-center rounded-lg transition ${log?.mark === 'no' ? 'bg-rose-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-rose-50 hover:text-rose-600'
+                        aria-label={`${h.name}: missed`}
+                        className={`flex h-7 w-7 items-center justify-center rounded-lg transition ${log?.mark === 'no'
+                            ? 'bg-rose-500 text-white shadow-sm'
+                            : 'bg-slate-100 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:bg-slate-800 dark:text-slate-500 dark:hover:bg-rose-950 dark:hover:text-rose-400'
                           }`}
                         title="Wrong / missed"
                       >
-                        <X size={14} />
+                        <Minus size={14} strokeWidth={3} />
                       </button>
                       <button
                         onClick={() => removeHabit(h.id)}
@@ -252,6 +300,24 @@ export default function Journal() {
                   </div>
                   <p className="truncate text-sm font-medium text-slate-800">{j.title || 'Untitled'}</p>
                   <p className="mt-1 line-clamp-2 text-xs text-slate-500">{j.content}</p>
+                  {(j.photos?.length ?? 0) > 0 && (
+                    <div className="mt-2 flex gap-1">
+                      {j.photos!.slice(0, 3).map((url) => (
+                        <img
+                          key={url}
+                          src={url}
+                          alt=""
+                          loading="lazy"
+                          className="h-8 w-8 rounded object-cover ring-1 ring-slate-200 dark:ring-slate-700"
+                        />
+                      ))}
+                      {j.photos!.length > 3 && (
+                        <span className="flex h-8 w-8 items-center justify-center rounded bg-slate-100 text-[10px] font-medium text-slate-500 dark:bg-slate-800">
+                          +{j.photos!.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </button>
               )
             })}

@@ -38,6 +38,14 @@ day feeds the next decision.
 | 🔥 | **Challenges** | Run 30 / 50 / 90-day (or custom) challenges side by side, marking each day pass or fail. |
 | 📈 | **Analysis** | Success rate, habit discipline, journal streak, weekly success-vs-failure chart, mood trend and a weekly review form. |
 | 🏠 | **Dashboard** | Today at a glance: goals, journal preview, habit check-in and headline KPIs. |
+| ⚡ | **Quick capture** | `⌘J` writes today's journal, `⌘⇧K` adds a goal — from any page, no navigation. Drafts are kept locally, so an offline tab or a closed laptop never loses a thought. |
+| 🔎 | **Command palette** | `⌘K` jumps to any page, creates entries, toggles the theme and exports your data. |
+| 🌙 | **Light / dark / system** | Theme toggle in the sidebar; the choice is applied before first paint, so there is no white flash. |
+| 📲 | **Installable + offline** | PWA manifest and service worker — add to Home Screen, open offline, cached shell. |
+| 📤 | **Export** | Download everything as Markdown, a restorable JSON backup, or a goals CSV. Your data, your file. |
+| 🎁 | **Templates** | Student week, Founder sprint, Fitness reset and Mindful start — one click seeds habits, a challenge and starter goals. |
+| 🔁 | **Recurring goals** | Daily / weekdays / weekly / monthly goals create a fresh copy automatically when due. |
+| 🖼️ | **Journal photos** | Attach up to 6 photos per entry; they are downscaled in the browser, stored in Supabase Storage and shown on past entries. |
 
 ---
 
@@ -109,6 +117,7 @@ table, index, trigger and RLS policy.
 | [`migration-challenges.sql`](database/migration-challenges.sql) | Adds `challenges` and `challenge_logs` |
 | [`migration-project-columns.sql`](database/migration-project-columns.sql) | Adds `project_columns` and `project_tasks.custom` |
 | [`migration-profile-onboarding.sql`](database/migration-profile-onboarding.sql) | Adds `role`, `full_name`, `age`, `country`, `onboarded_at` to `profiles` |
+| [`migration-qol.sql`](database/migration-qol.sql) | Adds recurring goals (`repeat`, `series_id`), journal `photos`, and the public `journal-photos` Storage bucket with per-user policies |
 
 All migrations are **safe to re-run**.
 
@@ -131,6 +140,40 @@ npm run dev
 ```
 
 Open **http://localhost:5199**.
+
+---
+
+## Deploying (Render)
+
+SoulMate has **no backend server** — auth, Postgres and Storage are all Supabase. Deploy only the
+frontend, as a **Static Site** (not a Web Service):
+
+| Setting | Value |
+|---|---|
+| Service type | **Static Site** (a Web Service will try Python/`requirements.txt` and fail) |
+| Root Directory | `frontend` |
+| Build Command | `npm ci && npm run build` |
+| Publish Directory | `dist` |
+| Rewrite | `/*` → `/index.html` (SPA fallback) |
+| Env vars | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_GOOGLE_CLIENT_ID` |
+
+[`render.yaml`](render.yaml) contains the same config as a blueprint. After the first deploy, set
+**Supabase → Authentication → URL Configuration** to your live URL:
+
+- Site URL: `https://<your-app>.onrender.com`
+- Redirect URLs: `https://<your-app>.onrender.com/auth/callback`
+
+---
+
+## Keyboard shortcuts
+
+| Keys | Action |
+|---|---|
+| `⌘K` / `Ctrl+K` | Command palette — navigate, create, change theme, export |
+| `⌘J` / `Ctrl+J` | Quick-capture today's journal (draft auto-saved locally) |
+| `⌘⇧K` / `Ctrl+Shift+K` | Quick-add a goal |
+| `⌘↵` / `Ctrl+Enter` | Save the open quick-capture sheet |
+| `↑` `↓` `↵` `esc` | Move / select / close inside the palette |
 
 ---
 
@@ -171,6 +214,10 @@ SOULMATE/
 │   └── migration-*.sql                # incremental upgrades, safe to re-run
 ├── frontend/
 │   ├── .env.example                   # public VITE_* template
+│   ├── public/
+│   │   ├── sw.js                      # service worker: offline shell + asset cache
+│   │   ├── manifest.webmanifest       # PWA manifest
+│   │   └── icon-*.png                 # install icons
 │   └── src/
 │       ├── lib/
 │       │   ├── supabase.ts            # Supabase client (PKCE)
@@ -178,9 +225,17 @@ SOULMATE/
 │       │   ├── api.ts                 # all data access
 │       │   ├── stats.ts               # derived metrics (rates, streaks)
 │       │   ├── types.ts               # shared types + labels
+│       │   ├── theme.ts               # light / dark / system preference
+│       │   ├── pwa.ts                 # service worker + install prompt + online state
+│       │   ├── quickCapture.ts        # global shortcut handling + sheet/palette stores
+│       │   ├── recurring.ts           # next-occurrence maths, roll-forward
+│       │   ├── templates.ts           # starter packs
+│       │   ├── storage.ts             # journal photo upload (browser-side resize)
+│       │   ├── export.ts              # Markdown / JSON / CSV builders
 │       │   └── previewData.ts         # sample data for ?preview=1
 │       ├── context/AppContext.tsx     # session + dashboard data provider
-│       ├── components/                # Layout, Modal, PageHeader, Progress…
+│       ├── components/                # Layout, Modal, CommandPalette, QuickCapture,
+│       │                              # ThemeToggle, ExportMenu, TemplatePicker…
 │       └── pages/                     # Landing, SignUp, Auth*, Dashboard, …
 └── backend/.env.example               # server-side secret template
 ```
@@ -194,8 +249,8 @@ Every row is scoped to `user_id` = the Supabase auth user id. `profiles` is keye
 | Table | Notes |
 |---|---|
 | `profiles` | Keyed by auth id. `role`, `full_name`, `age`, `country`, `onboarded_at` come from sign-up |
-| `journal_entries` | One per user per day (`unique (user_id, entry_date)`) |
-| `goals` | `horizon`: `today · tomorrow · day_after · week · month · year · long_term`<br>`bucket`: `future · present · done`<br>`status`: `planned · in_progress · success · failed` |
+| `journal_entries` | One per user per day (`unique (user_id, entry_date)`); `photos` holds Storage URLs |
+| `goals` | `horizon`: `today · tomorrow · day_after · week · month · year · long_term`<br>`bucket`: `future · present · done`<br>`status`: `planned · in_progress · success · failed`<br>`repeat`: `daily · weekdays · weekly · monthly` (null = one-off), `series_id` links the generated copies |
 | `habits` / `habit_logs` | `mark`: `yes` (right) · `no` (wrong) · `skip` |
 | `projects` / `project_tasks` | `status`: `todo · doing · done · failed` |
 | `project_columns` | User-defined columns; cell values live in `project_tasks.custom` (jsonb, keyed by column id) |
@@ -204,7 +259,9 @@ Every row is scoped to `user_id` = the Supabase auth user id. `profiles` is keye
 
 ### Security
 
-Row-level security is enabled on every table. Each policy targets the `authenticated` role and
+Journal photos live in the public-read `journal-photos` Storage bucket, but writes, updates
+and deletes are only allowed inside the caller's own `<user_id>/` folder. Row-level security
+is enabled on every table. Each policy targets the `authenticated` role and
 compares against `auth.uid()` — a signed-in browser therefore only ever sees its own rows.
 
 ---

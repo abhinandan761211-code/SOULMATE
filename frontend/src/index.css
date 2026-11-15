@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* class-based dark mode: `.dark` on <html> (see src/lib/theme.ts) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
@@ -43,9 +46,15 @@
     font-family: var(--font-sans);
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
+  .dark body {
+    @apply bg-slate-950 text-slate-300;
+  }
   /* Visible only for keyboard users — never for mouse clicks. */
   :focus-visible {
     @apply outline-none ring-2 ring-brand-500/45 ring-offset-2 ring-offset-white;
+  }
+  .dark :focus-visible {
+    @apply ring-offset-slate-950;
   }
   h1,
   h2,
@@ -76,6 +85,9 @@
     scrollbar-width: thin;
     scrollbar-color: #d3d8e2 transparent;
   }
+  .dark * {
+    scrollbar-color: #334155 transparent;
+  }
   *::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -83,6 +95,9 @@
   *::-webkit-scrollbar-thumb {
     background: #d3d8e2;
     border-radius: 9999px;
+  }
+  .dark *::-webkit-scrollbar-thumb {
+    background: #334155;
   }
   *::-webkit-scrollbar-track {
     background: transparent;
@@ -142,5 +157,106 @@
   }
   .page-sub {
     @apply mt-1 text-[13px] leading-relaxed text-slate-500;
+  }
+
+}
+
+/* ---------------------------------------------------------------------------
+   Dark theme overrides.
+
+   Pages are written with light-mode slate utilities throughout, so the shared
+   surface palette is remapped here in one place instead of touching every
+   screen. These live in @layer utilities and are doubled (.dark.dark) so they
+   beat the single-class utilities Tailwind emits later in the same layer.
+   ------------------------------------------------------------------------- */
+@layer utilities {
+  .dark.dark .card,
+  .dark.dark .panel {
+    @apply border-slate-800 bg-slate-900;
+  }
+  .dark.dark .panel-title,
+  .dark.dark .page-title {
+    @apply text-slate-100;
+  }
+  .dark.dark .input {
+    @apply border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-500 hover:border-slate-600 disabled:bg-slate-950 disabled:text-slate-500;
+  }
+  .dark.dark .btn-ghost {
+    @apply border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600 hover:bg-slate-800 active:bg-slate-800;
+  }
+  .dark.dark .btn-icon {
+    @apply text-slate-400 hover:bg-slate-800 hover:text-slate-100 active:bg-slate-700;
+  }
+  .dark.dark .nav-item {
+    @apply text-slate-400 hover:bg-slate-800/70 hover:text-slate-100;
+  }
+  .dark.dark .nav-item-active {
+    @apply bg-slate-800 text-brand-300 hover:bg-slate-800 hover:text-brand-300;
+  }
+
+  /* generic light-surface utilities used across pages */
+  .dark.dark .bg-white {
+    @apply bg-slate-900;
+  }
+  .dark.dark .bg-white\/90 {
+    @apply bg-slate-900/90;
+  }
+  .dark.dark .bg-slate-50,
+  .dark.dark .bg-slate-50\/60 {
+    @apply bg-slate-900/60;
+  }
+  .dark.dark .bg-slate-100 {
+    @apply bg-slate-800;
+  }
+  .dark.dark .border-slate-200,
+  .dark.dark .border-slate-200\/80,
+  .dark.dark .border-slate-200\/90,
+  .dark.dark .border-slate-300,
+  .dark.dark .border-slate-300\/80,
+  .dark.dark .border-slate-300\/70 {
+    @apply border-slate-700/80;
+  }
+  .dark.dark .divide-slate-100 > :not(:last-child) {
+    @apply border-slate-800;
+  }
+
+  /* text written for the light theme */
+  .dark.dark .text-slate-900,
+  .dark.dark .text-slate-800 {
+    @apply text-slate-100;
+  }
+  .dark.dark .text-slate-700 {
+    @apply text-slate-200;
+  }
+  .dark.dark .text-slate-600 {
+    @apply text-slate-300;
+  }
+  .dark.dark .text-slate-500 {
+    @apply text-slate-400;
+  }
+  .dark.dark .text-slate-400 {
+    @apply text-slate-500;
+  }
+  .dark.dark .text-brand-700 {
+    @apply text-brand-300;
+  }
+  .dark.dark .text-emerald-600 {
+    @apply text-emerald-400;
+  }
+  .dark.dark .text-rose-600 {
+    @apply text-rose-400;
+  }
+  .dark.dark .text-amber-600 {
+    @apply text-amber-400;
+  }
+
+  .dark.dark .hover\:bg-slate-50:hover,
+  .dark.dark .hover\:bg-slate-100:hover {
+    @apply bg-slate-800/70;
+  }
+  .dark.dark .shadow-card,
+  .dark.dark .shadow-sm,
+  .dark.dark .shadow-xs {
+    --tw-shadow-color: rgb(0 0 0 / 0.4);
   }
 }

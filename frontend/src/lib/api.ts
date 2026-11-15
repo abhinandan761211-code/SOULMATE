@@ -110,7 +110,7 @@ export async function loadDashboard(userId: string): Promise<DashboardData> {
 
 export async function saveJournal(
   userId: string,
-  entry: { entry_date: string; title: string; mood: string | null; content: string },
+  entry: { entry_date: string; title: string; mood: string | null; content: string; photos?: string[] },
 ) {
   const { data, error } = await supabase
     .from('journal_entries')
@@ -131,9 +131,11 @@ export async function deleteJournal(id: string) {
 export type GoalInsert = Omit<Goal, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'completed_at'>
 
 export async function createGoal(userId: string, goal: Partial<GoalInsert> & { title: string }) {
+  // recurring goals get a shared series id so generated copies can be traced
+  const payload = goal.repeat && !goal.series_id ? { ...goal, series_id: crypto.randomUUID() } : goal
   const { data, error } = await supabase
     .from('goals')
-    .insert({ user_id: userId, ...goal })
+    .insert({ user_id: userId, ...payload })
     .select()
     .single()
   if (error) throw new Error(error.message)

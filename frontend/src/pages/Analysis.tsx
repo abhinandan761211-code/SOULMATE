@@ -146,24 +146,39 @@ export default function Analysis() {
           <h2 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
             <BarChart3 size={16} className="text-violet-500" /> Weekly outcomes
           </h2>
-          <div className="flex h-40 items-end justify-around gap-4">
-            {stats.weekly.map((w) => (
-              <div key={w.label} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
-                <div className="flex h-full w-full items-end justify-center gap-1.5">
-                  <div
-                    className="w-5 rounded-t-md bg-emerald-500/80 transition-all"
-                    style={{ height: `${(w.success / maxWeekly) * 100}%` }}
-                    title={`${w.success} success`}
-                  />
-                  <div
-                    className="w-5 rounded-t-md bg-rose-500/80 transition-all"
-                    style={{ height: `${(w.failed / maxWeekly) * 100}%` }}
-                    title={`${w.failed} failed`}
-                  />
+          <div className="flex gap-3">
+            {/* y-axis: 0 and the peak, so an empty week still reads as zero */}
+            <div className="flex h-40 flex-col justify-between pb-5 text-[10px] tabular-nums text-slate-400">
+              <span>{maxWeekly}</span>
+              <span>0</span>
+            </div>
+            <div className="flex h-40 flex-1 items-stretch justify-around gap-4 border-l border-b border-slate-200 pl-3 dark:border-slate-700">
+              {stats.weekly.map((w) => (
+                <div key={w.label} className="flex flex-1 flex-col items-center justify-end">
+                  <div className="flex w-full flex-1 items-end justify-center gap-1.5">
+                    {([
+                      { n: w.success, label: 'success', bar: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
+                      { n: w.failed, label: 'failed', bar: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400' },
+                    ] as const).map((s) => (
+                      <div
+                        key={s.label}
+                        className={`relative w-6 rounded-t-md transition-[height] duration-500 ${s.bar} ${s.n ? '' : 'opacity-25'}`}
+                        /* a zero week keeps a 2px stub so the bar is visibly “0” */
+                        style={{ height: `${Math.max((s.n / maxWeekly) * 100, 1.5)}%` }}
+                        title={`${s.n} ${s.label}`}
+                      >
+                        {s.n > 0 && (
+                          <span className={`absolute inset-x-0 -top-4 text-center text-[10px] font-semibold tabular-nums ${s.text}`}>
+                            {s.n}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="mt-1.5 text-[10px] text-slate-500">{w.label}</span>
                 </div>
-                <span className="text-[10px] text-slate-500">{w.label}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
           <div className="mt-4 flex items-center gap-4 text-[11px] text-slate-400">
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-emerald-500" /> Success</span>

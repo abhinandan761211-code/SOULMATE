@@ -7,13 +7,14 @@ import {
   Flag,
   Plus,
   Rocket,
-
+  Repeat as RepeatIcon,
   X,
   XCircle,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { createGoal, updateGoal, today as todayStr } from '../lib/api'
 import { HORIZON_LABEL, HORIZON_ORDER, type Goal, type GoalStatus, type Horizon, type Priority } from '../lib/types'
+import { REPEAT_OPTIONS, repeatLabel, type Repeat } from '../lib/recurring'
 import { EmptyState, Modal, PageHeader, Progress } from '../components/ui'
 
 type Tab = 'daily' | 'present' | 'future' | 'results'
@@ -24,6 +25,9 @@ const TABS: { key: Tab; label: string; hint: string }[] = [
   { key: 'future', label: 'Future goals', hint: 'Long-term vision' },
   { key: 'results', label: 'Success & failure', hint: 'What you marked' },
 ]
+
+/** Daily planning columns: today / tomorrow / day after all belong to the daily tab. */
+const DAILY_HORIZONS: Horizon[] = ['today', 'tomorrow', 'day_after']
 
 const HORIZON_DEFAULT_DATE: Partial<Record<Horizon, () => string>> = {
   today: () => todayStr(),
@@ -37,6 +41,7 @@ export default function Goals() {
   const [open, setOpen] = useState(false)
   const [presetHorizon, setPresetHorizon] = useState<Horizon>('today')
   const [presetBucket, setPresetBucket] = useState<'future' | 'present'>('present')
+  const [presetRepeat, setPresetRepeat] = useState<Repeat | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const goals = data.goals
@@ -55,8 +60,9 @@ export default function Goals() {
     [goals],
   )
 
-  const present = goals.filter((g) => g.bucket === 'present' && !['today', 'tomorrow', 'day_after'].includes(g.horizon))
-  const future = goals.filter((g) => g.bucket === 'future')
+  // `daily` shows today/tomorrow/day-after, so present & future must not repeat them
+  const present = goals.filter((g) => g.bucket === 'present' && !DAILY_HORIZONS.includes(g.horizon))
+  const future = goals.filter((g) => g.bucket === 'future' && !DAILY_HORIZONS.includes(g.horizon))
   const results = goals.filter((g) => g.status === 'success' || g.status === 'failed')
 
   const setStatus = async (g: Goal, status: GoalStatus) => {
@@ -73,9 +79,30 @@ export default function Goals() {
     }
   }
 
-  const openNew = (horizon: Horizon, bucket: 'future' | 'present') => {
+  /** one click from the repeat bar: create a daily goal right away */
+  const quickRecurring = async (title: string) => {
+    if (!user) return
+    try {
+      await createGoal(user.id, {
+        title,
+        horizon: 'today',
+        bucket: 'present',
+        status: 'planned',
+        priority: 'medium',
+        progress: 0,
+        due_date: todayStr(),
+        repeat: 'daily',
+      })
+      await refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not create the goal')
+    }
+  }
+
+  const openNew = (horizon: Horizon, bucket: 'future' | 'present', repeat: Repeat | null = null) => {
     setPresetHorizon(horizon)
     setPresetBucket(bucket)
+    setPresetRepeat(repeat)
     setOpen(true)
   }
 
@@ -119,7 +146,26 @@ export default function Goals() {
       </div>
 
       {tab === 'daily' && (
-        <div className="grid gap-4 lg:grid-cols-3">
+        <section className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-slate-300/80 bg-slate-50/60 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/40">
+          <RepeatIcon size={14} className="shrink-0 text-slate-400" />
+          <span className="text-[12px] font-medium text-slate-600 dark:text-slate-300">Repeat every day:</span>
+          <div className="flex flex-wrap gap-1.5">
+            {['Wake up early', 'Workout', 'Read 20 pages', 'No phone after 10pm', 'Plan tomorrow'].map((title) => (
+              <button
+                key={title}
+                onClick={() => quickRecurring(title)}
+                className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-brand-600 dark:hover:bg-brand-950/40"
+                title={`Create “${title}” as a daily recurring goal`}
+              >
+                + {title}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {tab === 'daily' && (
+        <div className="grid items-start gap-4 lg:grid-cols-3">
           {daily.map(({ horizon, items }) => (
             <section key={horizon} className="card p-4">
               <div className="mb-3 flex items-center justify-between">
@@ -138,9 +184,15 @@ export default function Goals() {
                 </button>
               </div>
               {items.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400">
-                  Nothing yet. Add 1–3 must-do items.
-                </p>
+                <div className="flex flex-col items-center gap-1.5 rounded-lg border border-dashed border-slate-200 px-3 py-5 text-center dark:border-slate-700">
+                  <p className="text-xs text-slate-400">Nothing planned yet.</p>
+                  <button
+                    onClick={() => openNew(horizon, 'present')}
+                    className="text-[11px] font-medium text-brand-600 hover:text-brand-700 dark:text-brand-300 dark:hover:text-brand-200"
+                  >
+                    + Add a goal
+                  </button>
+                </div>
               ) : (
                 <GoalRows goals={items} onStatus={setStatus} />
               )}
@@ -271,6 +323,7 @@ export default function Goals() {
         <GoalForm
           defaultHorizon={presetHorizon}
           defaultBucket={presetBucket}
+          defaultRepeat={presetRepeat}
           onSubmit={async (payload) => {
             await createGoal(user!.id, payload)
             await refresh()
@@ -314,6 +367,15 @@ function GoalRows({
             >
               {g.title}
             </span>
+
+            {repeatLabel(g) && (
+              <span
+                className="chip shrink-0 bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300"
+                title={`Recurring · ${repeatLabel(g)}`}
+              >
+                <RepeatIcon size={10} />
+              </span>
+            )}
 
             {/* Pass / Fail marking — this is what feeds the success ratio */}
             <div className="flex shrink-0 items-center gap-1">
@@ -433,11 +495,13 @@ function GoalCard({
 function GoalForm({
   defaultHorizon,
   defaultBucket,
+  defaultRepeat = null,
   onSubmit,
   onCancel,
 }: {
   defaultHorizon: Horizon
   defaultBucket: 'future' | 'present'
+  defaultRepeat?: Repeat | null
   onSubmit: (payload: {
     title: string
     description: string | null
@@ -447,6 +511,7 @@ function GoalForm({
     due_date: string | null
     progress: number
     status: GoalStatus
+    repeat: Repeat | null
   }) => Promise<void>
   onCancel: () => void
 }) {
@@ -457,6 +522,7 @@ function GoalForm({
   const [priority, setPriority] = useState<Priority>('medium')
   const [dueDate, setDueDate] = useState(HORIZON_DEFAULT_DATE[defaultHorizon]?.() ?? '')
   const [progress, setProgress] = useState(0)
+  const [repeat, setRepeat] = useState<Repeat | null>(defaultRepeat)
   const [busy, setBusy] = useState(false)
 
   const changeHorizon = (h: Horizon) => {
@@ -480,6 +546,7 @@ function GoalForm({
         due_date: dueDate || null,
         progress,
         status: progress > 0 ? 'in_progress' : 'planned',
+        repeat,
       })
     } finally {
       setBusy(false)
@@ -540,6 +607,44 @@ function GoalForm({
             <option value="high">High</option>
           </select>
         </div>
+      </div>
+
+      <div>
+        <label className="label">Repeat</label>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setRepeat(null)}
+            aria-pressed={repeat === null}
+            className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+              repeat === null
+                ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-900/40 dark:text-brand-200'
+                : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+            }`}
+          >
+            One-off
+          </button>
+          {REPEAT_OPTIONS.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => setRepeat(o.value)}
+              aria-pressed={repeat === o.value}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                repeat === o.value
+                  ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-900/40 dark:text-brand-200'
+                  : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+        {repeat && (
+          <p className="mt-1.5 text-[11px] text-slate-500">
+            A fresh copy appears automatically when it’s due — mark each one success or failed.
+          </p>
+        )}
       </div>
 
       <div>

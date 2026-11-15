@@ -15,6 +15,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import { ThemeToggle } from '../components/ThemeToggle'
 
 /* ------------------------------------------------------------------ */
 /*  Content — mirrors what the product actually does, not marketing    */
@@ -90,17 +91,18 @@ export default function Landing() {
   const ctaLabel = user ? 'Open your workspace' : 'Sign up with Google'
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-slate-950">
       <Header ctaTo={ctaTo} ctaLabel={user ? 'Open app' : 'Sign up'} signedIn={Boolean(user)} />
 
       {/* ---------------------------------------------------------- hero */}
       <section className="relative overflow-hidden">
         {/* restrained background: a soft grid + one warm glow, no rainbow blobs */}
+        {/* uses currentColor so the grid follows the theme (see .hero-grid in index.css) */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.55]"
+          className="hero-grid pointer-events-none absolute inset-0 opacity-[0.55] text-slate-200 dark:text-slate-800"
           style={{
             backgroundImage:
-              'linear-gradient(to right, rgb(241 245 249) 1px, transparent 1px), linear-gradient(to bottom, rgb(241 245 249) 1px, transparent 1px)',
+              'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
             backgroundSize: '56px 56px',
             maskImage: 'radial-gradient(ellipse 70% 60% at 50% 0%, black 40%, transparent 100%)',
             WebkitMaskImage: 'radial-gradient(ellipse 70% 60% at 50% 0%, black 40%, transparent 100%)',
@@ -110,25 +112,25 @@ export default function Landing() {
 
         <div className="relative mx-auto max-w-6xl px-5 pb-16 pt-14 sm:px-8 sm:pb-20 sm:pt-20 lg:pt-24">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-xs backdrop-blur">
-              <Sparkles size={13} className="text-brand-600" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-xs backdrop-blur dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-300">
+              <Sparkles size={13} className="text-brand-600 dark:text-brand-400" />
               Your personal life companion
             </div>
 
-            <h1 className="mt-6 text-[34px] font-semibold leading-[1.08] tracking-[-0.03em] text-slate-900 sm:text-5xl lg:text-[56px]">
+            <h1 className="mt-6 text-[34px] font-semibold leading-[1.08] tracking-[-0.03em] text-slate-900 sm:text-5xl lg:text-[56px] dark:text-slate-50">
               Write your day.{' '}
               <span className="relative whitespace-nowrap">
                 <span className="relative z-10">Judge it honestly.</span>
                 {/* highlight sits BEHIND the text, low enough not to touch descenders */}
                 <span
-                  className="absolute inset-x-0 bottom-[0.06em] z-0 h-[0.34em] rounded-sm bg-brand-200/70"
+                  className="absolute inset-x-0 bottom-[0.06em] z-0 h-[0.34em] rounded-sm bg-brand-200/70 dark:bg-brand-500/30"
                   aria-hidden
                 />
               </span>{' '}
               Grow.
             </h1>
 
-            <p className="mx-auto mt-5 max-w-xl text-[15px] leading-relaxed text-slate-600 sm:text-base">
+            <p className="mx-auto mt-5 max-w-xl text-[15px] leading-relaxed text-slate-600 sm:text-base dark:text-slate-300">
               SoulMate is one place for your daily writing, your goals for today and the future, your projects and
               challenges — and an honest record of what worked and what did not.
             </p>
@@ -144,7 +146,7 @@ export default function Landing() {
               </a>
             </div>
 
-            <p className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-slate-500">
+            <p className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
               <span className="inline-flex items-center gap-1.5">
                 <Check size={13} className="text-emerald-600" /> Free to start
               </span>
@@ -163,16 +165,16 @@ export default function Landing() {
       </section>
 
       {/* -------------------------------------------------------- stats */}
-      <section className="border-y border-slate-200 bg-slate-50/70">
+      <section className="border-y border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/40">
         <dl className="mx-auto grid max-w-6xl grid-cols-2 gap-px px-5 sm:px-8 lg:grid-cols-4">
           {STATS.map((s) => (
             <div key={s.label} className="px-2 py-7 text-center">
               <dt className="sr-only">{s.label}</dt>
               <dd>
-                <span className="block text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
+                <span className="block text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl dark:text-slate-100">
                   {s.value}
                 </span>
-                <span className="mt-1 block text-xs text-slate-500">{s.label}</span>
+                <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{s.label}</span>
               </dd>
             </div>
           ))}
@@ -182,11 +184,11 @@ export default function Landing() {
       {/* ----------------------------------------------------- features */}
       <section id="features" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16 sm:px-8 sm:py-24">
         <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">Everything in one place</p>
-          <h2 className="mt-3 text-[26px] font-semibold leading-tight tracking-[-0.02em] text-slate-900 sm:text-4xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-600 dark:text-brand-400">Everything in one place</p>
+          <h2 className="mt-3 text-[26px] font-semibold leading-tight tracking-[-0.02em] text-slate-900 sm:text-4xl dark:text-slate-50">
             Six tools that keep each other honest
           </h2>
-          <p className="mt-3 text-[15px] leading-relaxed text-slate-600">
+          <p className="mt-3 text-[15px] leading-relaxed text-slate-600 dark:text-slate-300">
             Journaling without goals is a diary. Goals without analysis is a wish list. SoulMate connects them, so
             every day feeds the next decision.
           </p>
@@ -196,17 +198,17 @@ export default function Landing() {
           {FEATURES.map(({ icon: Icon, title, text, points }) => (
             <article
               key={title}
-              className="group rounded-xl border border-slate-200 bg-white p-5 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-card"
+              className="group rounded-xl border border-slate-200 bg-white p-5 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-card dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
             >
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-600 ring-1 ring-inset ring-brand-100 transition-colors group-hover:bg-brand-600 group-hover:text-white group-hover:ring-brand-600">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-600 ring-1 ring-inset ring-brand-100 transition-colors group-hover:bg-brand-600 group-hover:text-white group-hover:ring-brand-600 dark:bg-brand-950/60 dark:text-brand-300 dark:ring-brand-900">
                 <Icon size={18} />
               </span>
-              <h3 className="mt-4 text-[15px] font-semibold tracking-tight text-slate-900">{title}</h3>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600">{text}</p>
-              <ul className="mt-4 space-y-1.5 border-t border-slate-100 pt-3">
+              <h3 className="mt-4 text-[15px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">{title}</h3>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600 dark:text-slate-400">{text}</p>
+              <ul className="mt-4 space-y-1.5 border-t border-slate-100 pt-3 dark:border-slate-800">
                 {points.map((p) => (
-                  <li key={p} className="flex items-center gap-2 text-[12px] text-slate-500">
-                    <Check size={12} className="shrink-0 text-emerald-600" strokeWidth={3} />
+                  <li key={p} className="flex items-center gap-2 text-[12px] text-slate-500 dark:text-slate-400">
+                    <Check size={12} className="shrink-0 text-emerald-600 dark:text-emerald-400" strokeWidth={3} />
                     {p}
                   </li>
                 ))}
@@ -217,11 +219,14 @@ export default function Landing() {
       </section>
 
       {/* ---------------------------------------------------- how it works */}
-      <section className="border-y border-slate-200 bg-slate-50/70">
+      <section
+        id="how-it-works"
+        className="scroll-mt-20 border-y border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/40"
+      >
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">Getting started</p>
-            <h2 className="mt-3 text-[26px] font-semibold leading-tight tracking-[-0.02em] text-slate-900 sm:text-4xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-600 dark:text-brand-400">Getting started</p>
+            <h2 className="mt-3 text-[26px] font-semibold leading-tight tracking-[-0.02em] text-slate-900 sm:text-4xl dark:text-slate-50">
               Live in under a minute
             </h2>
           </div>
@@ -235,11 +240,11 @@ export default function Landing() {
                     aria-hidden
                   />
                 )}
-                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-semibold tabular-nums text-brand-700 shadow-xs">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-semibold tabular-nums text-brand-700 shadow-xs dark:border-slate-700 dark:bg-slate-800 dark:text-brand-300">
                   {s.n}
                 </span>
-                <h3 className="mt-4 text-[15px] font-semibold text-slate-900">{s.title}</h3>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600">{s.text}</p>
+                <h3 className="mt-4 text-[15px] font-semibold text-slate-900 dark:text-slate-100">{s.title}</h3>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600 dark:text-slate-400">{s.text}</p>
               </li>
             ))}
           </ol>
@@ -273,24 +278,25 @@ export default function Landing() {
       </section>
 
       {/* ------------------------------------------------------ footer */}
-      <footer className="border-t border-slate-200">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 text-xs text-slate-500 sm:flex-row sm:px-8">
+      <footer className="border-t border-slate-200 dark:border-slate-800">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 text-xs text-slate-500 sm:flex-row sm:px-8 dark:text-slate-400">
           <p className="flex items-center gap-2">
             <span className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-600">
               <Sparkles size={12} className="text-white" />
             </span>
-            <span className="font-semibold text-slate-700">SoulMate</span>
-            <span className="text-slate-300">·</span>
+            <span className="font-semibold text-slate-700 dark:text-slate-200">SoulMate</span>
+            <span className="text-slate-300 dark:text-slate-600">·</span>
             Life · Goals · Growth
           </p>
-          <nav className="flex items-center gap-5">
-            <a href="#features" className="transition-colors hover:text-slate-900">
+          {/* -my-2 / py-2 keeps the links comfortable to tap on a phone (44px) */}
+          <nav className="flex items-center gap-1 sm:gap-2">
+            <a href="#features" className="rounded-md px-2.5 py-2.5 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white">
               Features
             </a>
-            <Link to="/signin" className="transition-colors hover:text-slate-900">
+            <Link to="/signin" className="rounded-md px-2.5 py-2.5 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white">
               Sign in
             </Link>
-            <Link to="/signup" className="transition-colors hover:text-slate-900">
+            <Link to="/signup" className="rounded-md px-2.5 py-2.5 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white">
               Sign up
             </Link>
           </nav>
@@ -312,25 +318,29 @@ function Header({
   signedIn: boolean
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/85">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
         <Link to="/" className="flex items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 shadow-sm">
             <Sparkles size={16} className="text-white" />
           </span>
-          <span className="text-[15px] font-semibold tracking-tight text-slate-900">SoulMate</span>
+          <span className="text-[15px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">SoulMate</span>
         </Link>
 
-        <nav className="hidden items-center gap-7 text-[13px] font-medium text-slate-600 md:flex">
-          <a href="#features" className="transition-colors hover:text-slate-900">
+        <nav className="hidden items-center gap-7 text-[13px] font-medium text-slate-600 md:flex dark:text-slate-400">
+          <a href="#features" className="transition-colors hover:text-slate-900 dark:hover:text-white">
             Features
           </a>
-          <a href="#features" className="transition-colors hover:text-slate-900">
+          <a href="#how-it-works" className="transition-colors hover:text-slate-900 dark:hover:text-white">
             How it works
           </a>
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* icon-only: a public visitor should be able to pick their theme */}
+          <div className="hidden sm:block">
+            <ThemeToggle compact />
+          </div>
           {!signedIn && (
             <Link to="/signin" className="btn-ghost hidden px-3.5 py-2 text-[13px] sm:inline-flex">
               Sign in
@@ -354,50 +364,50 @@ function ProductPreview() {
     { title: '30 min workout', status: 'failed' },
   ]
   const tone: Record<string, string> = {
-    success: 'bg-emerald-50 text-emerald-700',
-    planned: 'bg-slate-100 text-slate-600',
-    failed: 'bg-rose-50 text-rose-700',
+    success: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+    planned: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+    failed: 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
   }
 
   return (
     <div className="relative mx-auto mt-14 max-w-4xl sm:mt-16">
-      <div className="rounded-xl border border-slate-200 bg-white p-2 shadow-[0_2px_8px_rgb(16_24_40/0.06),0_24px_48px_-12px_rgb(16_24_40/0.12)]">
+      <div className="rounded-xl border border-slate-200 bg-white p-2 shadow-[0_2px_8px_rgb(16_24_40/0.06),0_24px_48px_-12px_rgb(16_24_40/0.12)] dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-1.5 px-2 py-1.5">
-          <span className="h-2 w-2 rounded-full bg-slate-200" />
-          <span className="h-2 w-2 rounded-full bg-slate-200" />
-          <span className="h-2 w-2 rounded-full bg-slate-200" />
-          <span className="ml-2 hidden rounded bg-slate-50 px-2 py-0.5 text-[10px] text-slate-400 sm:block">
+          <span className="h-2 w-2 rounded-full bg-slate-200 dark:bg-slate-700" />
+          <span className="h-2 w-2 rounded-full bg-slate-200 dark:bg-slate-700" />
+          <span className="h-2 w-2 rounded-full bg-slate-200 dark:bg-slate-700" />
+          <span className="ml-2 hidden rounded bg-slate-50 px-2 py-0.5 text-[10px] text-slate-400 sm:block dark:bg-slate-800">
             soulmate · dashboard
           </span>
         </div>
 
-        <div className="grid gap-2 rounded-lg bg-slate-50/80 p-2 sm:grid-cols-3">
+        <div className="grid gap-2 rounded-lg bg-slate-50/80 p-2 sm:grid-cols-3 dark:bg-slate-950/60">
           {/* KPI strip */}
-          <div className="rounded-lg border border-slate-200 bg-white p-3 sm:col-span-3">
+          <div className="rounded-lg border border-slate-200 bg-white p-3 sm:col-span-3 dark:border-slate-800 dark:bg-slate-900">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-slate-400">Today</p>
-                <p className="text-sm font-semibold text-slate-900">Good morning, Aarav</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Good morning, Aarav</p>
               </div>
-              <div className="flex items-center gap-4 text-[11px] text-slate-500">
+              <div className="flex items-center gap-4 text-[11px] text-slate-500 dark:text-slate-400">
                 <span>
-                  <span className="font-semibold text-slate-900">67%</span> progress
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">67%</span> progress
                 </span>
                 <span>
-                  <span className="font-semibold text-emerald-600">80%</span> success
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">80%</span> success
                 </span>
                 <span className="hidden sm:inline">
-                  <span className="font-semibold text-slate-900">6</span> day streak
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">6</span> day streak
                 </span>
               </div>
             </div>
-            <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+            <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
               <div className="h-full w-2/3 rounded-full bg-brand-500" />
             </div>
           </div>
 
           {/* goals */}
-          <div className="rounded-lg border border-slate-200 bg-white p-3 sm:col-span-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-3 sm:col-span-2 dark:border-slate-800 dark:bg-slate-900">
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Today&apos;s goals</p>
             <ul className="space-y-1.5">
               {goals.map((g, i) => (
@@ -406,15 +416,16 @@ function ProductPreview() {
                     className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${g.status === 'success'
                         ? 'border-emerald-500 bg-emerald-500 text-white'
                         : g.status === 'failed'
-                          ? 'border-rose-300 bg-rose-50 text-rose-500'
-                          : 'border-slate-300 text-transparent'
+                          ? 'border-rose-300 bg-rose-50 text-rose-500 dark:border-rose-700 dark:bg-rose-950'
+                          : 'border-slate-300 text-transparent dark:border-slate-600'
                       }`}
                   >
                     <Check size={9} strokeWidth={4} />
                   </span>
                   <span
-                    className={`flex-1 truncate text-[11px] ${g.status === 'failed' ? 'text-slate-400 line-through' : 'text-slate-700'
-                      }`}
+                    className={`flex-1 truncate text-[11px] ${
+                      g.status === 'failed' ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'
+                    }`}
                   >
                     {g.title}
                   </span>
@@ -426,7 +437,7 @@ function ProductPreview() {
           </div>
 
           {/* habit grid */}
-          <div className="rounded-lg border border-slate-200 bg-white p-3">
+          <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Last 14 days</p>
             <div className="space-y-1.5">
               {[0, 1, 2].map((row) => (
@@ -434,7 +445,11 @@ function ProductPreview() {
                   {Array.from({ length: 14 }, (_, i) => {
                     const seed = (row * 7 + i * 3) % 11
                     const color =
-                      seed < 5 ? 'bg-emerald-500' : seed < 8 ? 'bg-rose-400' : 'bg-slate-100'
+                      seed < 5
+                        ? 'bg-emerald-500'
+                        : seed < 8
+                          ? 'bg-rose-400'
+                          : 'bg-slate-100 dark:bg-slate-800'
                     return <span key={i} className={`h-2.5 flex-1 rounded-sm ${color}`} />
                   })}
                 </div>
@@ -448,17 +463,17 @@ function ProductPreview() {
       </div>
 
       {/* floating accent cards */}
-      <div className="absolute -right-3 -top-5 hidden rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-pop lg:block">
+      <div className="absolute -right-3 -top-5 hidden rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-pop lg:block dark:border-slate-700 dark:bg-slate-900">
         <p className="text-[10px] text-slate-400">This week</p>
-        <p className="text-sm font-semibold text-emerald-600">+12% success</p>
+        <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">+12% success</p>
       </div>
-      <div className="absolute -bottom-5 -left-4 hidden items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-pop lg:flex">
-        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-50">
+      <div className="absolute -bottom-5 -left-4 hidden items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-pop lg:flex dark:border-slate-700 dark:bg-slate-900">
+        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-50 dark:bg-amber-950/60">
           <Flame size={12} className="text-amber-500" />
         </span>
         <div>
           <p className="text-[10px] leading-none text-slate-400">Challenge</p>
-          <p className="text-[11px] font-semibold text-slate-800">Day 12 of 30</p>
+          <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-200">Day 12 of 30</p>
         </div>
       </div>
     </div>

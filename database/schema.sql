@@ -35,6 +35,7 @@ create table if not exists public.journal_entries (
   title       text,
   mood        text,                            -- great | good | okay | low | bad
   content     text,
+  photos      text[] default '{}',             -- storage URLs (bucket: journal-photos)
   created_at  timestamptz default now(),
   updated_at  timestamptz default now(),
   unique (user_id, entry_date)
@@ -57,6 +58,8 @@ create table if not exists public.goals (
   progress      int  default 0 check (progress between 0 and 100),
   result_note   text,
   completed_at  timestamptz,
+  repeat        text,                           -- daily | weekdays | weekly | monthly (null = one-off)
+  series_id     text,                           -- shared by copies of the same recurring goal
   created_at    timestamptz default now(),
   updated_at    timestamptz default now()
 );
@@ -168,6 +171,7 @@ create index if not exists idx_challenges_user on public.challenges (user_id, st
 create index if not exists idx_challenge_logs_challenge on public.challenge_logs (challenge_id, log_date desc);
 create index if not exists idx_journal_user_date on public.journal_entries (user_id, entry_date desc);
 create index if not exists idx_goals_user on public.goals (user_id, horizon, status);
+create index if not exists idx_goals_series on public.goals (series_id);
 create index if not exists idx_habit_logs_user_date on public.habit_logs (user_id, log_date desc);
 create index if not exists idx_projects_user on public.projects (user_id);
 create index if not exists idx_project_tasks_project on public.project_tasks (project_id, sort_order);
