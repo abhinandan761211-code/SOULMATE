@@ -1,0 +1,32 @@
+# Netlify configuration — SoulMate
+#
+# SoulMate has no backend server: auth, Postgres and storage are Supabase.
+# Only the Vite frontend is deployed.
+
+[build]
+  # All install/build commands run from here
+  base    = "frontend"
+  command = "npm ci && npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA fallback — every unknown path serves index.html so client-side routes
+# (/app, /app/journal, /auth/callback ...) survive a hard refresh.
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
+
+# Long-cache hashed build assets (index-<hash>.js / .css)
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# The service worker must never be cached, or updates never reach users
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

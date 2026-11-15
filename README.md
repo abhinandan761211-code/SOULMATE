@@ -157,11 +157,28 @@ frontend, as a **Static Site** (not a Web Service):
 | Rewrite | `/*` → `/index.html` (SPA fallback) |
 | Env vars | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_GOOGLE_CLIENT_ID` |
 
-[`render.yaml`](render.yaml) contains the same config as a blueprint. After the first deploy, set
-**Supabase → Authentication → URL Configuration** to your live URL:
+[`render.yaml`](render.yaml) contains the same config as a blueprint.
 
-- Site URL: `https://<your-app>.onrender.com`
-- Redirect URLs: `https://<your-app>.onrender.com/auth/callback`
+### Netlify
+
+[`netlify.toml`](netlify.toml) already sets base `frontend`, command `npm ci && npm run build`,
+publish `dist`, the SPA rewrite and asset/service-worker cache headers — leave Netlify's build
+settings on **“Use build settings from netlify.toml”** and only add the env vars:
+
+| Variable | Value |
+|---|---|
+| `VITE_SUPABASE_URL` | your project URL |
+| `VITE_SUPABASE_ANON_KEY` | public anon key |
+| `VITE_GOOGLE_CLIENT_ID` | Google OAuth client id |
+
+### After the first deploy
+
+Set **Supabase → Authentication → URL Configuration** to your live URL:
+
+- Site URL: `https://<your-app>.netlify.app` (or `.onrender.com`)
+- Redirect URLs: `https://<your-app>.netlify.app/auth/callback`
+
+Also add the same URL under **Google Cloud Console → Credentials → Authorized JavaScript origins**.
 
 ---
 
